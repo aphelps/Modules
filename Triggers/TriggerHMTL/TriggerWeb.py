@@ -7,6 +7,9 @@ from io import StringIO
 import re
 import serial
 
+triggers = [0, 1, 2, 3]
+values = [0, 64, 128, 196, 255]
+
 trig_state = {}
 
 device = '/dev/tty.usbserial-AM01SJR1'
@@ -71,10 +74,19 @@ def form_app(environ, start_response):
     for trig in trig_state:
         print("Trigger %d: %d<p>" % (trig, trig_state[trig]), file=output)
 
-    print('<form method="POST">Trigger: <input type="text" name="trig">'
-          'Value: <input type="text" name="value">'
-          '<input type="submit" value="Send"></form>',
-          file=output)
+    print('<form method="POST">', file=output)
+
+    print('Trigger:<select name=trig>', file=output)
+    for trig in triggers:
+        print('<option value="%d">%d</option>' % (trig, trig), file=output)
+    print('</select>', file=output);
+
+    print('Value:<select name=value>', file=output)
+    for val in values:
+        print('<option value="%d">%d</option>' % (val, val), file=output)
+    print('</select>', file=output);
+
+    print('<input type="submit" value="Send"></form>', file=output)
 
     return [html_page(output.getvalue())]
 
