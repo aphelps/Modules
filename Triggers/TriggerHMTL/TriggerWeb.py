@@ -7,14 +7,30 @@ from io import StringIO
 import re
 import serial
 
-triggers = [0, 1, 2, 3]
+triggers = []
 values = [0, 64, 128, 196, 255]
 
 trig_state = {}
 
+#
+# Return a trigger and value from 'trig=<trig>&value=<val>'
+#
+trig_matcher = re.compile('trig=([0-9]+)')
+value_matcher = re.compile('value=([0-9]+)')
+def get_trig_value(str_data):
+    trigmatch = trig_matcher.search(str_data)
+    valmatch = value_matcher.search(str_data)
+    if (trigmatch and valmatch):
+        trig = int(trigmatch.group(1))
+        val = int(valmatch.group(1))
+        return (trig, val)
+    return (None, None)
+
+#
+# Serial communication
+#
 device = '/dev/tty.usbserial-AM01SJR1'
 ser = serial.Serial(device, 9600, timeout=1)
-
 def waitForReady():
     """Wait for the Arduino to send its ready signal"""
     while True:
@@ -24,6 +40,19 @@ def waitForReady():
             print("Recieved ready from Arduino")
             break
 
+# Send request for current values and parse into the trigger state
+def getTriggerValues():
+    ser.write(bytes('s\n', 'utf-8'))
+    while True:
+        data = ser.readline().strip().decode()
+        print("Read from serial: '%s'" % (data))
+        if (data == "Done"):
+            break
+        if (data):
+            (trig, val) = get_trig_value(data)
+            if ((trig != None) and (val != None)):
+                trig_state[trig] = val
+
 def serial_update(trig, val):
     trig_state[trig] = val
 
@@ -31,20 +60,14 @@ def serial_update(trig, val):
     print("Will send: %s" % (data))
     ser.write(bytes(data, 'utf-8'))
 
-
 #
 # Parse form data
 #
-trig_matcher = re.compile('trig=([0-9]+)')
-value_matcher = re.compile('value=([0-9]+)')
 def handle_post(post_data):
     str_data = post_data.decode()
-    print("Received post data '%s'" % str_data)
-    trigmatch = trig_matcher.search(str_data)
-    valmatch = value_matcher.search(str_data)
-    if (trigmatch and valmatch):
-        trig = int(trigmatch.group(1))
-        val = int(valmatch.group(1))
+    print("Received post data '%s'" % (str_data))
+    (trig, val) = get_trig_value(str_data)
+    if ((trig != None) and (val != None)):
         print("Trigger=%d Value=%d" % (trig, val))
         serial_update(trig, val)
     
@@ -90,10 +113,13 @@ def form_app(environ, start_response):
 
     return [html_page(output.getvalue())]
 
+# Wait for serial to initialize and request the trigger list
 waitForReady()
+getTriggerValues()
+triggers = list(trig_state.keys())
 
 #httpd = make_server('127.0.0.1', 8000, form_app)
-httpd = make_server('10.111.1.61', 8000, form_app)
+httpd = make_server('', 8000, form_app)
 print("Serving on port 8000...")
 
 httpd.serve_forever()

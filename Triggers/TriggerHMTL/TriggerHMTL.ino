@@ -106,7 +106,7 @@ void setup() {
     hmtl_setup_output((output_hdr_t *)outputs[i], data);
   }
 
-  /* Indicate that we're ready for data */
+  /* Indicate that we're ready to receive data */
   Serial.println("Ready for commands");
 }
 
@@ -123,6 +123,7 @@ void loop() {
 
 /*
  * t <num> <value> - Set trigger <num> to <value>
+ * s - Print the current state
  */
 void cliHandler(char **tokens, byte numtokens) {
   
@@ -149,8 +150,22 @@ void cliHandler(char **tokens, byte numtokens) {
     break;
   }
 
+  case 's': {
+    printState();
+    break;
+  }
+
   default:{
     break;
   }
   }
+}
+
+void printState() {
+  DEBUG_PRINTLN(0, "Values:");
+  for (byte trig = 0; trig < num_triggers; trig++) {
+    DEBUG_VALUE(0, "trig=", trig);
+    DEBUG_VALUELN(0, " value=", triggers[trig]->value);
+  }
+  DEBUG_PRINTLN(0, "Done")
 }
