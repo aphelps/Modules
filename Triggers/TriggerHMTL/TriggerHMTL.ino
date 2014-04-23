@@ -105,6 +105,9 @@ void setup() {
     
     hmtl_setup_output((output_hdr_t *)outputs[i], data);
   }
+
+  /* Indicate that we're ready for data */
+  Serial.println("Ready for commands");
 }
 
 void loop() {
