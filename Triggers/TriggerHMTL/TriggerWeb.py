@@ -99,15 +99,15 @@ def form_app(environ, start_response):
 
     print('<form method="POST">', file=output)
 
-    print('Trigger:<select name=trig>', file=output)
-    for trig in triggers:
-        print('<option value="%d">%d</option>' % (trig, trig), file=output)
-    print('</select>', file=output);
+    print('Trigger:<select name=trig>',
+          "".join(['<option value="%d">%d</option>' % (t, t) for t in triggers]),
+          '</select>',
+          file=output)
 
-    print('Value:<select name=value>', file=output)
-    for val in values:
-        print('<option value="%d">%d</option>' % (val, val), file=output)
-    print('</select>', file=output);
+    print('Value:<select name=value>',
+          "".join(['<option value="%d">%d</option>' % (t, t) for t in values]),
+          '</select>',
+          file=output)
 
     print('<input type="submit" value="Send"></form>', file=output)
 
