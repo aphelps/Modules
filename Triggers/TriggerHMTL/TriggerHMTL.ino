@@ -113,13 +113,35 @@ void setup() {
 void loop() {
   serialcli.checkSerial();
 
+  if (rs485_output != NULL) {
+    checkRS485();
+  }
+
   for (int i = 0; i < num_triggers; i++) {
-    hmtl_update_output((output_hdr_t *)triggers[i], NULL);
+      hmtl_update_output((output_hdr_t *)triggers[i], NULL);
   }
 
   delay(10);
 }
 
+/* Check for data on rs485 and handle message */
+void checkRS485() {
+  unsigned int msglen;
+  const byte *data = rs485.getMsg(0x10, &msglen);
+  if (data != NULL) {
+    // XXX - This is very prototype and untested
+    DEBUG_VALUELN(0, "Recieved ", msglen);
+    if (msglen == 2) {
+      boolean trig0 = data[0] & 0x1;
+      boolean trig1 = data[0] & 0x2;
+
+      if (trig0) triggers[0]->value = 255;
+      else triggers[0]->value = 0;
+      if (trig1) triggers[1]->value = 255;
+      else triggers[1]->value = 0;
+    }
+  }
+}
 
 /*
  * t <num> <value> - Set trigger <num> to <value>
